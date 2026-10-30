@@ -51,6 +51,31 @@ def get_cached_data():
 
     return processed_df, categories
 
+# Muat dataset sebelum sidebar/filter dibuat agar variabel data tersedia.
+with st.spinner("Memuat dataset energi dunia..."):
+    df, energy_categories = get_cached_data()
+
+if df.empty:
+    st.error("Dataset kosong.")
+    st.stop()
+
+if "year" not in df.columns or "country" not in df.columns:
+    st.error("Dataset harus memiliki kolom year dan country.")
+    st.stop()
+
+if not energy_categories:
+    st.error("Tidak ditemukan kolom kategori energi pada dataset.")
+    st.stop()
+
+available_years = sorted(
+    pd.to_numeric(df["year"], errors="coerce").dropna().astype(int).unique().tolist()
+)
+all_countries = sorted(df["country"].dropna().astype(str).unique().tolist())
+
+if not available_years:
+    st.error("Dataset tidak memiliki tahun yang valid.")
+    st.stop()
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Helper
 # ─────────────────────────────────────────────────────────────────────────────
@@ -133,7 +158,7 @@ with st.sidebar:
                 "Rentang Tahun",
                 min_value=int(min(available_years)),
                 max_value=int(max(available_years)),
-                value=(int(max(available_years)) - 10, int(max(available_years)))
+                value=(max(int(min(available_years)), int(max(available_years)) - 10), int(max(available_years)))
             )
             selected_years = list(range(yr_range[0], yr_range[1] + 1))
         else:
@@ -172,7 +197,7 @@ with st.sidebar:
         """, unsafe_allow_html=True)
     else:
         # Default values agar tidak error di halaman lain
-        selected_years = list(range(int(max(available_years)) - 10, int(max(available_years)) + 1))
+        selected_years = available_years[-11:]
         selected_countries_filter = []
         selected_energy_type = list(energy_categories.keys())[0]
         color_palette = "Viridis"
